@@ -1,0 +1,23 @@
+# syntax=docker/dockerfile:1
+#
+# Lint / test / audit an Electron app in a Red Hat UBI 9 container (no packaging).
+# Mirrors what a CI "verify" job does; swap the RUN line for `npm run lint && npm test`
+# in a real project.
+#
+#   docker build -f Dockerfile.ci -t electron-ci-ubi9 .
+
+FROM registry.access.redhat.com/ubi9/nodejs-22:latest
+
+# No Electron binary needed just to install deps + lint/parse.
+ENV ELECTRON_SKIP_BINARY_DOWNLOAD=1
+
+WORKDIR /build
+
+COPY example-app/package.json ./
+RUN npm install
+
+COPY example-app/ ./
+
+# The example ships no test suite; prove deps install cleanly and the app parses.
+# In a real repo this becomes: RUN npm run lint && npm test && npm audit --audit-level=high
+RUN node --check main.js && echo "CI OK on $(node -v) / UBI 9: deps installed, main.js parses"

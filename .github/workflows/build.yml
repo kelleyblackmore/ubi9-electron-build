@@ -1,0 +1,57 @@
+name: build
+
+# Builds the example Electron app with each UBI 9 image so the images are
+# continuously proven. Linux + CI are the reliable ones; the Windows/Wine image
+# is experimental and allowed to fail without failing the whole run.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  DOCKER_BUILDKIT: "1"
+
+jobs:
+  ci:
+    name: CI (UBI 9)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Lint/parse in UBI 9
+        run: docker build -f Dockerfile.ci -t electron-ci-ubi9 .
+
+  linux:
+    name: Linux build (UBI 9)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build tar.gz + rpm in UBI 9
+        run: docker build -f Dockerfile.linux --target export -o type=local,dest=./out-linux .
+      - name: List artifacts
+        run: ls -lh out-linux
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux-dist
+          path: out-linux/*
+          if-no-files-found: error
+
+  windows:
+    name: Windows build (UBI 9 + Wine, experimental)
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build NSIS installer in UBI 9 via Wine
+        run: docker build -f Dockerfile.windows --target export -o type=local,dest=./out-win .
+      - name: List artifacts
+        run: ls -lh out-win || true
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows-dist
+          path: out-win/*
+          if-no-files-found: warn

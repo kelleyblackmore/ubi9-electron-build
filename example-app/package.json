@@ -1,0 +1,43 @@
+{
+  "name": "ubi9-electron-example",
+  "version": "0.1.0",
+  "description": "Minimal Electron app used to prove the UBI 9 build images produce real installers",
+  "main": "main.js",
+  "author": "kelleyblackmore",
+  "license": "MIT",
+  "scripts": {
+    "start": "electron .",
+    "make-icon": "node make-icon.js"
+  },
+  "devDependencies": {
+    "electron": "^43.1.0",
+    "electron-builder": "^26.15.3"
+  },
+  "build": {
+    "appId": "com.kelleyblackmore.ubi9electronexample",
+    "productName": "UBI9 Electron Example",
+    "files": [
+      "main.js",
+      "index.html",
+      "package.json"
+    ],
+    "directories": {
+      "buildResources": "build"
+    },
+    "linux": {
+      "target": [
+        "tar.gz",
+        "rpm"
+      ],
+      "category": "Utility"
+    },
+    "win": {
+      "target": "nsis"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true
+    }
+  }
+}

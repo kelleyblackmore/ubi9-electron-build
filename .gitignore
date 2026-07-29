@@ -1,0 +1,8 @@
+node_modules/
+dist/
+out/
+out-*/
+example-app/node_modules/
+example-app/dist/
+example-app/build/icon.png
+*.log
