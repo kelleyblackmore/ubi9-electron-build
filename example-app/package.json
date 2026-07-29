@@ -3,8 +3,9 @@
   "version": "0.1.0",
   "description": "Minimal Electron app used to prove the UBI 9 build images produce real installers",
   "main": "main.js",
-  "author": "kelleyblackmore",
+  "author": "Kelley Blackmore <kelleyblackmore@gmail.com>",
   "license": "MIT",
+  "homepage": "https://github.com/kelleyblackmore/ubi9-electron-build",
   "scripts": {
     "start": "electron .",
     "make-icon": "node make-icon.js"
