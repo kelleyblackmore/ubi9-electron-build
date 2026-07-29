@@ -12,8 +12,11 @@ FROM registry.access.redhat.com/ubi9/nodejs-22:latest AS builder
 # dnf + electron-builder's rpm target need root; the base image runs as uid 1001.
 USER 0
 
-# rpmbuild is required for the rpm target; tar/gzip are already present.
-RUN dnf install -y --nodocs rpm-build && dnf clean all
+# rpm-build for the rpm target. libxcrypt-compat provides libcrypt.so.1, which
+# electron-builder's bundled fpm (a Ruby binary) links against but RHEL 9 no
+# longer ships by default — without it the rpm step dies with
+#   ruby: error while loading shared libraries: libcrypt.so.1
+RUN dnf install -y --nodocs rpm-build libxcrypt-compat && dnf clean all
 
 WORKDIR /build
 
