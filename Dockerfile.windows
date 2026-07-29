@@ -1,29 +1,17 @@
 # syntax=docker/dockerfile:1
 #
-# Build a Windows NSIS installer for an Electron app on Red Hat UBI 9 via Wine.
+# Build a Windows NSIS installer for an Electron app in a container.
 #
-# EXPERIMENTAL. electron-builder builds Windows targets on Linux by shelling out
-# to Windows executables under Wine. Wine on RHEL/UBI 9 is not in the default
-# repos — it comes from EPEL and pulls a large (and historically fussy) 32-bit
-# dependency set. If this image proves unreliable in your environment, the
-# proven fallback is Debian + Wine (see Dockerfile.windows.debian / README).
+# This deliberately does NOT use UBI 9. Windows builds need Wine, and Wine on
+# RHEL/UBI 9 is out-of-repo (EPEL) and historically fussy with its 32-bit deps.
+# So for the Windows target we use `electronuserland/builder:wine` — the
+# maintained Debian + Wine + Node image that electron-builder itself targets for
+# Linux-hosted Windows builds. UBI 9 stays the base for the Linux + CI images,
+# where it's native and the right call for RHEL-family environments.
 #
 #   docker build -f Dockerfile.windows --target export -o type=local,dest=./out-win .
 
-FROM registry.access.redhat.com/ubi9/nodejs-22:latest AS builder
-
-USER 0
-
-# EPEL (for wine) + CRB (for some wine deps). --skip-broken keeps the layer from
-# dying if an optional 32-bit dep is unavailable; the wineboot below is the real
-# smoke test of whether Wine is usable.
-RUN dnf install -y --nodocs https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm \
- && dnf install -y --nodocs --enablerepo=crb --skip-broken wine \
- && dnf clean all
-
-ENV WINEDEBUG=-all \
-    WINEDLLOVERRIDES="mscoree,mshtml=" \
-    WINEPREFIX=/opt/wineprefix
+FROM electronuserland/builder:wine AS builder
 
 WORKDIR /build
 
@@ -32,13 +20,12 @@ RUN npm install
 
 COPY example-app/ ./
 
-RUN wineboot --init > /dev/null 2>&1 || true
-
 RUN mkdir -p /artifacts \
  && node make-icon.js \
  && npx --no-install electron-builder --win nsis --publish never \
  && cp dist/*.exe /artifacts/ \
  && ls -lh /artifacts
 
+# ---- export: scratch image holding only the artifacts, for --output ----
 FROM scratch AS export
 COPY --from=builder /artifacts/ /

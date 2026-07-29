@@ -41,17 +41,16 @@ jobs:
           if-no-files-found: error
 
   windows:
-    name: Windows build (UBI 9 + Wine, experimental)
+    name: Windows build (Debian + Wine)
     runs-on: ubuntu-latest
-    continue-on-error: true
     steps:
       - uses: actions/checkout@v4
-      - name: Build NSIS installer in UBI 9 via Wine
+      - name: Build NSIS installer via Wine
         run: docker build -f Dockerfile.windows --target export -o type=local,dest=./out-win .
       - name: List artifacts
-        run: ls -lh out-win || true
+        run: ls -lh out-win
       - uses: actions/upload-artifact@v4
         with:
           name: windows-dist
           path: out-win/*
-          if-no-files-found: warn
+          if-no-files-found: error

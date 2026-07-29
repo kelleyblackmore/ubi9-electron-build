@@ -20,7 +20,7 @@ slots straight into RHEL-family distribution.
 |---|---|---|---|
 | **Linux** (`tar.gz` + `rpm`) | [`Dockerfile.linux`](Dockerfile.linux) | ✅ reliable | Fully native, no emulation. |
 | **CI** (lint / test / parse) | [`Dockerfile.ci`](Dockerfile.ci) | ✅ reliable | Swap the `RUN` line for `npm run lint && npm test`. |
-| **Windows** (`NSIS .exe`) | [`Dockerfile.windows`](Dockerfile.windows) | ⚠️ experimental | Needs **Wine** from EPEL; RHEL 9 Wine is fussy. See fallback below. |
+| **Windows** (`NSIS .exe`) | [`Dockerfile.windows`](Dockerfile.windows) | ✅ reliable | Uses `electronuserland/builder:wine` (Debian + Wine) — **not** UBI 9; see below. |
 | **macOS** (`.dmg`) | — | ❌ **not possible** | See below. |
 
 ### macOS cannot be containerized — at all
@@ -49,15 +49,18 @@ docker build -f Dockerfile.ci -t electron-ci-ubi9 .
 
 Podman works the same (`podman build ...`), which is handy on RHEL hosts.
 
-## Windows / Wine fallback
+## Why Windows isn't on UBI 9
 
-If Wine on UBI 9 doesn't cooperate in your environment, the **proven** container
-path for Windows is **Debian + Wine** — Debian ships `wine64`/`wine32` in-repo,
-which electron-builder's NSIS + winCodeSign steps expect. The GitHub Actions
-`windows` job here is marked `continue-on-error` for exactly this reason; its
-result tells you whether UBI 9 + Wine is viable on current EPEL. (Note that even
-on Debian, a *signed* Windows installer needs a real code-signing setup — Azure
-Trusted Signing or an OV/EV cert — which is a separate concern.)
+Windows builds need **Wine**, and Wine on RHEL/UBI 9 is out-of-repo (EPEL) and
+historically fussy with its 32-bit dependency set. So the Windows target uses
+**`electronuserland/builder:wine`** — the maintained Debian + Wine + Node image
+that electron-builder itself targets — which is the reliable path. UBI 9 stays
+the base for the **Linux** and **CI** images, where it's native and the right
+call for RHEL-family environments. Use the best tool per target rather than
+forcing one base everywhere.
+
+(Even in a container, a *signed* Windows installer still needs a real
+code-signing setup — Azure Trusted Signing or an OV/EV cert — which is separate.)
 
 ## Applying to your own app
 
